@@ -76,5 +76,3 @@ gcc -Wall -Wextra -o tokenizer lex.yy.c
 | `SYMBOL` | `;`, `{`, `(`, `[` |
 | `ERROR` | `@`, `#`, `$`, `` ` ``, `\` |
 | *(Comments)* | `// …`, `/* … */` — counted, not printed |
-
-*Flex 2.6+ · GCC · Linux · macOS · WSL · MSYS2*
