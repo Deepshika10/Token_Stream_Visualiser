@@ -44,8 +44,6 @@ chmod +x run.sh   # first time only
 ./run.sh
 ```
 
-Outputs are saved to `output1.txt` … `output5.txt`.
-
 ### Option B — Manual (single file)
 
 ```bash
