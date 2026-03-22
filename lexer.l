@@ -31,6 +31,7 @@ void print_row(const char *type, const char *value, int ln);
 void print_footer(void);
 void print_summary(void);
 char *truncate_val(const char *s, char *buf, int maxlen);
+extern int first_token;
 
 %}
 
@@ -82,16 +83,16 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "unsigned"  |
 "void"      |
 "volatile"  |
-"while"     { print_row("KEYWORD",    yytext, line_no); cnt_keyword++; }
+"while"     { print_row("Keyword",    yytext, line_no); cnt_keyword++; }
 
  /* ── Literals ─────────────────────────────────────────────── */
-{FLOAT_LIT}  { print_row("FLOAT",      yytext, line_no); cnt_float++;   }
-{INT_LIT}    { print_row("INTEGER",    yytext, line_no); cnt_integer++;  }
-{STR_LIT}    { print_row("STRING",     yytext, line_no); cnt_string++;   }
-{CHAR_LIT}   { print_row("CHAR_LIT",   yytext, line_no); cnt_char++;     }
+{FLOAT_LIT}  { print_row("Number",     yytext, line_no); cnt_float++;   }
+{INT_LIT}    { print_row("Number",     yytext, line_no); cnt_integer++;  }
+{STR_LIT}    { print_row("String",     yytext, line_no); cnt_string++;   }
+{CHAR_LIT}   { print_row("Char",       yytext, line_no); cnt_char++;     }
 
  /* ── Identifiers ──────────────────────────────────────────── */
-{ID}         { print_row("IDENTIFIER", yytext, line_no); cnt_ident++;    }
+{ID}         { print_row("Identifier", yytext, line_no); cnt_ident++;    }
 
  /* ── Multi-character operators (before single-char!) ──────── */
 "=="  |
@@ -110,13 +111,13 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "<<"  |
 ">>"  |
 "->"  |
-"::"  { print_row("OPERATOR",  yytext, line_no); cnt_op++;     }
+"::"  { print_row("Operator",  yytext, line_no); cnt_op++;     }
 
  /* ── Single-character operators ───────────────────────────── */
-[+\-*/=<>!%&|^~]  { print_row("OPERATOR",  yytext, line_no); cnt_op++;     }
+[+\-*/=<>!%&|^~]  { print_row("Operator",  yytext, line_no); cnt_op++;     }
 
  /* ── Punctuation / Symbols ────────────────────────────────── */
-[;,(){}[\].:?]    { print_row("SYMBOL",    yytext, line_no); cnt_symbol++; }
+[;,(){}[\].:?]    { print_row("Symbol",    yytext, line_no); cnt_symbol++; }
 
  /* ── Comments (tracked but not printed as tokens) ─────────── */
 {SL_COMMENT}  {
@@ -126,17 +127,30 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 {ML_COMMENT}  {
     /* multi-line comment — update line counter & count */
     int i;
-    for (i = 0; yytext[i] != '\0'; i++)
-        if (yytext[i] == '\n') line_no++;
+    for (i = 0; yytext[i] != '\0'; i++) {
+        if (yytext[i] == '\n') {
+            line_no++;
+            if (!first_token) {
+                printf("\n");
+                first_token = 1;
+            }
+        }
+    }
     cnt_comment++;
 }
 
  /* ── Whitespace ───────────────────────────────────────────── */
-\n          { line_no++; }
+\n          { 
+    line_no++; 
+    if (!first_token) {
+        printf("\n");
+        first_token = 1;
+    }
+}
 [ \t\r]+    { /* ignore */ }
 
  /* ── Anything else is an error token ─────────────────────── */
-.           { print_row("ERROR",      yytext, line_no); cnt_error++;   }
+.           { print_row("Error",      yytext, line_no); cnt_error++;   }
 
 %%
 
@@ -157,65 +171,31 @@ char *truncate_val(const char *s, char *buf, int maxlen) {
     return buf;
 }
 
-/* ============================================================
-   Table borders and header
-   +-------+--------------------+--------------------+--------+
-   ============================================================ */
-#define COL_SEP "+-------+--------------------+--------------------+--------+"
-#define COL_HDR "| %-5s | %-18s | %-18s | %-6s |"
-#define COL_ROW "| %-5d | %-18s | %-18s | %-6d |"
+int first_token = 1;
 
 void print_banner(const char *filename) {
-    printf("\n");
-    printf("  +=====================================================+\n");
-    printf("  |         T O K E N   S T R E A M   V I S U A L I Z E R         |\n");
-    printf("  |                                                     |\n");
-    printf("  |  Input : %-41s|\n", filename);
-    printf("  +=====================================================+\n");
-    printf("\n");
+    /* empty */
 }
 
 void print_header(void) {
-    printf("%s\n", COL_SEP);
-    printf(COL_HDR "\n", "No.", "TOKEN TYPE", "TOKEN VALUE", "LINE");
-    printf("%s\n", COL_SEP);
+    /* empty */
 }
 
 void print_row(const char *type, const char *value, int ln) {
-    char buf[64];
+    if (!first_token) {
+        printf(" | ");
+    }
+    printf("%s(%s)", type, value);
+    first_token = 0;
     token_no++;
-    printf(COL_ROW "\n", token_no, type, truncate_val(value, buf, 18), ln);
 }
 
 void print_footer(void) {
-    printf("%s\n", COL_SEP);
+    printf("\n");
 }
 
 void print_summary(void) {
-    int grand = cnt_keyword + cnt_ident  + cnt_integer + cnt_float  +
-                cnt_string  + cnt_char   + cnt_op      + cnt_symbol +
-                cnt_error;
-
-    printf("\n");
-    printf("  +========================+=========+\n");
-    printf("  |   TOKEN STREAM SUMMARY           |\n");
-    printf("  +========================+=========+\n");
-    printf("  | %-22s | %-7s |\n", "Category",         "Count");
-    printf("  +========================+=========+\n");
-    printf("  | %-22s | %-7d |\n", "Keywords",          cnt_keyword);
-    printf("  | %-22s | %-7d |\n", "Identifiers",       cnt_ident);
-    printf("  | %-22s | %-7d |\n", "Integers",          cnt_integer);
-    printf("  | %-22s | %-7d |\n", "Floats",            cnt_float);
-    printf("  | %-22s | %-7d |\n", "String Literals",   cnt_string);
-    printf("  | %-22s | %-7d |\n", "Char Literals",     cnt_char);
-    printf("  | %-22s | %-7d |\n", "Operators",         cnt_op);
-    printf("  | %-22s | %-7d |\n", "Symbols",           cnt_symbol);
-    printf("  | %-22s | %-7d |\n", "Comments (skipped)",cnt_comment);
-    printf("  | %-22s | %-7d |\n", "Errors",            cnt_error);
-    printf("  +------------------------+---------+\n");
-    printf("  | %-22s | %-7d |\n", "TOTAL TOKENS",      grand);
-    printf("  +========================+=========+\n");
-    printf("\n");
+    /* empty */
 }
 
 /* ============================================================

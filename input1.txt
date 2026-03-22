@@ -1,28 +1,4 @@
 int a = 100;
 int b = 200;
 float pi = 3.14159;
-double e = 2.71828e+0;
-char letter = 'Z';
-char greeting[] = "Hello, World";
 
-int sum     = a + b;
-int diff    = b - a;
-int product = a * 2;
-int quotient  = b / a;
-int remainder = b % a;
-
-int isEqual   = (a == b);
-int notEqual  = (a != b);
-int isGreater = (b > a);
-int isLess    = (a < b);
-int isGE      = (b >= a);
-int isLE      = (a <= b);
-
-int x = 0;
-x += 10;
-x -= 3;
-x *= 4;
-x /= 2;
-x %= 7;
-x++;
-x--;

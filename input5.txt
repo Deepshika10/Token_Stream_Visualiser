@@ -5,16 +5,4 @@ int main() {
     int sum = x + y;
     float rate = 3.14159;
     $ // invalid character — error token
-    char ch = 'A';
-    # // invalid — hash has no meaning in raw C token stream
-    int arr[5];
-    int i;
-    for (i = 0; i < 5; i++) {
-        arr[i] = i * 2;
-    }
-    ` // invalid — backtick is not a C token
-    int doubled = sum * 2;
-    int flag = (x != y) && (rate > 0.0);
-    \ // invalid — lone backslash outside a string
-    return doubled;
 }
