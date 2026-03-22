@@ -1,0 +1,116 @@
+/* ================================================
+   input3.txt — Valid C Input
+   Covers: structs, pointers, string & char
+   literals, all operator families, both
+   comment styles (single-line & multi-line)
+   ================================================ */
+
+struct Student {
+    char name[50];
+    int  rollNo;
+    float marks;
+};
+
+// Compute letter grade from a float mark
+char computeGrade(float marks) {
+    if (marks >= 90.0) return 'A';
+    else if (marks >= 75.0) return 'B';
+    else if (marks >= 60.0) return 'C';
+    else if (marks >= 50.0) return 'D';
+    else return 'F';
+}
+
+/* Return "Pass" or "Fail" string literal
+   based on the marks value passed in      */
+char *getStatus(float marks) {
+    if (marks >= 50.0) {
+        return "Pass";
+    }
+    return "Fail";
+}
+
+// Swap two integers using pointers
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int main() {
+    /* --- struct usage --- */
+    struct Student s;
+    s.rollNo = 101;
+    s.marks  = 87.5;
+
+    // pointer to struct
+    struct Student *ptr = &s;
+    ptr->rollNo = 102;
+
+    /* --- all arithmetic operators --- */
+    int x = 10 + 3;
+    int y = 10 - 3;
+    int z = 10 * 3;
+    int q = 10 / 3;
+    int r = 10 % 3;
+
+    /* --- compound assignment operators --- */
+    x += 1;
+    y -= 1;
+    z *= 2;
+    q /= 2;
+    r %= 2;
+
+    /* --- relational operators --- */
+    int eq  = (x == y);
+    int neq = (x != y);
+    int gt  = (x >  y);
+    int lt  = (x <  y);
+    int gte = (x >= y);
+    int lte = (x <= y);
+
+    /* --- logical operators --- */
+    int andOp = (x > 0) && (y > 0);
+    int orOp  = (x > 0) || (y < 0);
+    int notOp = !(x == 0);
+
+    /* --- bitwise operators --- */
+    int bAnd = x & y;
+    int bOr  = x | y;
+    int bXor = x ^ y;
+    int bNot = ~x;
+    int shl  = x << 2;
+    int shr  = x >> 1;
+
+    /* --- increment / decrement --- */
+    x++;
+    y--;
+    ++z;
+    --q;
+
+    /* --- string and char literals --- */
+    char  ch  = 'Z';
+    char  nl  = '\n';
+    char  tab = '\t';
+    char *msg = "Hello, World!";
+    char *fmt = "Score: %f\n";
+
+    /* --- ternary / conditional operator --- */
+    int pass = (s.marks >= 50.0) ? 1 : 0;
+
+    /* --- pointer arithmetic --- */
+    int  arr[5];
+    int *p = arr;
+    int  i;
+    for (i = 0; i < 5; i++) {
+        *(p + i) = i * i;
+    }
+
+    // arrow operator via pointer
+    char grade  = computeGrade(ptr->marks);
+    char *status = getStatus(ptr->marks);
+
+    /* --- swap using pointers --- */
+    swap(&x, &y);
+
+    return 0;
+}

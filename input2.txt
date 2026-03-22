@@ -1,0 +1,42 @@
+int power(int base, int exp) {
+    int result = 1;
+    for (int i = 0; i < exp; i++) {
+        result *= base;
+    }
+    return result;
+}
+
+int max(int a, int b) {
+    if (a >= b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+int min(int a, int b) {
+    if (a <= b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+void countdown(int n) {
+    while (n > 0) {
+        n--;
+    }
+}
+
+int absolute(int n) {
+    return (n < 0) ? -n : n;
+}
+
+int main() {
+    int x = power(2, 8);
+    int y = max(x, 100);
+    int z = min(x, 50);
+    int a = absolute(-99);
+    countdown(y);
+    return 0;
+}

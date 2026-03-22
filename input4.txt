@@ -1,0 +1,30 @@
+@ # $ ` \
+@@@ ### $$$
+
+@ dollar sign $ and backtick ` are not valid C tokens
+\ lone backslash outside a string is invalid
+
+int x = @;
+float y = $ + 3.14;
+char z = `;
+
+@ @ @ # # # $ $ $
+
+int valid_var = 99;
+int broken = @ + $ + `;
+
+\ @ \ $ \ ` \ # \ @
+
+#define NOT_VALID 100
+#include <fake.h>
+
+int a = 1 @ 2;
+int b = 3 $ 4;
+int c = 5 ` 6;
+
+@@invalid_start
+$$another_bad
+``backtick_pair
+
+\ \ \ \ \
+@ # $ ` \ @ # $ ` \
