@@ -1,13 +1,2 @@
-int x = @;
-float y = $ + 3.14;
-char z = `;
-
-int valid_var = 99;
-
-@;
-
-#define NOT_VALID 100
-#include <fake.h>
-
-int a = 1 @ 2;
-
+double a = 2.5e+2;
+double b = a / 5;

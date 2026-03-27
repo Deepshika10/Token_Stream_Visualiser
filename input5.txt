@@ -1,8 +1,2 @@
-int main() {
-    int x = 10;
-    int y = 20;
-    @ // invalid character — error token
-    int sum = x + y;
-    float rate = 3.14159;
-    $ // invalid character — error token
-}
+int i = 0;
+i++;
