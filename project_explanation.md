@@ -79,23 +79,11 @@ The main logic is in `lexer.l`, which is a Flex specification file. Let's break 
 #include <string.h>
 #include <stdlib.h>
 
-/* ── counters ─────────────────────────────────────────────── */
+/* ── state ────────────────────────────────────────────────── */
 int line_no     = 1;    // Current line number in input
-int token_no    = 0;    // Total tokens processed
-
-int cnt_keyword = 0;    // Count of keywords found
-int cnt_ident   = 0;    // Count of identifiers found
-int cnt_integer = 0;    // Count of integer literals
-int cnt_float   = 0;    // Count of float literals
-int cnt_string  = 0;    // Count of string literals
-int cnt_char    = 0;    // Count of character literals
-int cnt_op      = 0;    // Count of operators
-int cnt_symbol  = 0;    // Count of symbols/punctuation
-int cnt_comment = 0;    // Count of comments
-int cnt_error   = 0;    // Count of error tokens
 ```
 
-**Explanation**: This section includes necessary C headers and declares global counters to track different types of tokens. These counters are used for statistics but aren't currently displayed in the output.
+**Explanation**: This section includes necessary C headers and declares global lexer state. The lexer keeps track of the current input line using `line_no`.
 
 ```c
 /* ── forward declarations ─────────────────────────────────── */
@@ -195,19 +183,19 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "unsigned"  |
 "void"      |
 "volatile"  |
-"while"     { print_row("Keyword",    yytext, line_no); cnt_keyword++; }
+"while"     { print_row("Keyword",    yytext, line_no); }
 ```
 
-**Explanation**: Matches all C keywords. The `|` separates alternatives. When a keyword is found, it calls `print_row()` to output "Keyword(keyword)" and increments the keyword counter.
+**Explanation**: Matches all C keywords. The `|` separates alternatives. When a keyword is found, it calls `print_row()` to output `Keyword(keyword)`.
 
 #### Literals (Lines 64-67)
 
 ```c
  /* ── Literals ─────────────────────────────────────────────── */
-{FLOAT_LIT}  { print_row("Number",     yytext, line_no); cnt_float++;   }
-{INT_LIT}    { print_row("Number",     yytext, line_no); cnt_integer++;  }
-{STR_LIT}    { print_row("String",     yytext, line_no); cnt_string++;   }
-{CHAR_LIT}   { print_row("Char",       yytext, line_no); cnt_char++;     }
+{FLOAT_LIT}  { print_row("Number",     yytext, line_no); }
+{INT_LIT}    { print_row("Number",     yytext, line_no); }
+{STR_LIT}    { print_row("String",     yytext, line_no); }
+{CHAR_LIT}   { print_row("Char",       yytext, line_no); }
 ```
 
 **Explanation**: Matches numeric literals (both int and float), string literals, and character literals. All numbers are categorized as "Number" regardless of type.
@@ -216,7 +204,7 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 
 ```c
  /* ── Identifiers ──────────────────────────────────────────── */
-{ID}         { print_row("Identifier", yytext, line_no); cnt_ident++;    }
+{ID}         { print_row("Identifier", yytext, line_no); }
 ```
 
 **Explanation**: Matches valid C identifiers (variable names, function names, etc.) and prints them as "Identifier(name)".
@@ -241,7 +229,7 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "<<"  |
 ">>"  |
 "->"  |
-"::"  { print_row("Operator",  yytext, line_no); cnt_op++;     }
+"::"  { print_row("Operator",  yytext, line_no); }
 ```
 
 **Explanation**: Matches compound operators like ==, !=, <=, etc. These must come before single-character operators to avoid conflicts.
@@ -250,7 +238,7 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 
 ```c
  /* ── Single-character operators ───────────────────────────── */
-[+\-*/=<>!%&|^~]  { print_row("Operator",  yytext, line_no); cnt_op++;     }
+[+\-*/=<>!%&|^~]  { print_row("Operator",  yytext, line_no); }
 ```
 
 **Explanation**: Matches single-character operators using a character class.
@@ -259,7 +247,7 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 
 ```c
  /* ── Punctuation / Symbols ────────────────────────────────── */
-[;,(){}[\].:?]    { print_row("Symbol",    yytext, line_no); cnt_symbol++; }
+[;,(){}[\].:?]    { print_row("Symbol",    yytext, line_no); }
 ```
 
 **Explanation**: Matches punctuation symbols like semicolons, parentheses, brackets, etc.
@@ -267,13 +255,12 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 #### Comments (Lines 92-107)
 
 ```c
- /* ── Comments (tracked but not printed as tokens) ─────────── */
+ /* ── Comments (not printed as tokens) ─────────────────────── */
 {SL_COMMENT}  {
-    /* single-line comment — count but do not emit a token row */
-    cnt_comment++;
+    /* single-line comment — ignore */
 }
 {ML_COMMENT}  {
-    /* multi-line comment — update line counter & count */
+    /* multi-line comment — update line counter */
     int i;
     for (i = 0; yytext[i] != '\0'; i++) {
         if (yytext[i] == '\n') {
@@ -284,11 +271,10 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
             }
         }
     }
-    cnt_comment++;
 }
 ```
 
-**Explanation**: Comments are counted but not printed as tokens. Multi-line comments need special handling to count line breaks correctly.
+**Explanation**: Comments are not printed as tokens. Multi-line comments need special handling so embedded newlines still update `line_no` correctly.
 
 #### Whitespace (Lines 109-116)
 
@@ -310,7 +296,7 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 
 ```c
  /* ── Anything else is an error token ─────────────────────── */
-.           { print_row("Error",      yytext, line_no); cnt_error++;   }
+.           { print_row("Error",      yytext, line_no); }
 ```
 
 **Explanation**: Any character that doesn't match previous patterns is treated as an error token.
@@ -363,7 +349,6 @@ void print_row(const char *type, const char *value, int ln) {
     }
     printf("%s(%s)", type, value);
     first_token = 0;
-    token_no++;
 }
 
 void print_footer(void) {
@@ -430,7 +415,7 @@ Keyword(float) | Identifier(b) | Operator(=) | Error(@) | Number(.0) | Symbol(;)
 
 ### Adding New Features
 - **Line numbers in output**: Modify `print_row()` to include line numbers
-- **Token counting summary**: Implement `print_summary()` to display counter values
+- **Output summary**: Implement `print_summary()` if you want to display extra lexer information at the end
 - **Error reporting**: Enhance error handling with more descriptive messages
 
 ### File Changes and Rebuilding
@@ -451,7 +436,7 @@ Keyword(float) | Identifier(b) | Operator(=) | Error(@) | Number(.0) | Symbol(;)
 3. **Longest Match Rule**: When multiple patterns match, chooses the longest
 4. **Rule Priority**: Earlier rules take precedence over later ones
 5. **Token Actions**: Each matched pattern triggers its associated C code
-6. **State Management**: Maintains line numbers and token counters
+6. **State Management**: Maintains line numbers and token spacing state
 7. **Output Formatting**: Prints tokens in a stream format separated by " | "
 
 This project demonstrates the fundamental principles of lexical analysis that form the first phase of any compiler or interpreter.
