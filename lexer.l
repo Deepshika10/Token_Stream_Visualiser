@@ -9,20 +9,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* ── counters ─────────────────────────────────────────────── */
+/* ── state ────────────────────────────────────────────────── */
 int line_no     = 1;
-int token_no    = 0;
-
-int cnt_keyword = 0;
-int cnt_ident   = 0;
-int cnt_integer = 0;
-int cnt_float   = 0;
-int cnt_string  = 0;
-int cnt_char    = 0;
-int cnt_op      = 0;
-int cnt_symbol  = 0;
-int cnt_comment = 0;
-int cnt_error   = 0;
 
 /* ── forward declarations ─────────────────────────────────── */
 void print_banner(const char *filename);
@@ -83,16 +71,16 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "unsigned"  |
 "void"      |
 "volatile"  |
-"while"     { print_row("Keyword",    yytext, line_no); cnt_keyword++; }
+"while"     { print_row("Keyword",    yytext, line_no); }
 
  /* ── Literals ─────────────────────────────────────────────── */
-{FLOAT_LIT}  { print_row("Number",     yytext, line_no); cnt_float++;   }
-{INT_LIT}    { print_row("Number",     yytext, line_no); cnt_integer++;  }
-{STR_LIT}    { print_row("String",     yytext, line_no); cnt_string++;   }
-{CHAR_LIT}   { print_row("Char",       yytext, line_no); cnt_char++;     }
+{FLOAT_LIT}  { print_row("Number",     yytext, line_no); }
+{INT_LIT}    { print_row("Number",     yytext, line_no); }
+{STR_LIT}    { print_row("String",     yytext, line_no); }
+{CHAR_LIT}   { print_row("Char",       yytext, line_no); }
 
  /* ── Identifiers ──────────────────────────────────────────── */
-{ID}         { print_row("Identifier", yytext, line_no); cnt_ident++;    }
+{ID}         { print_row("Identifier", yytext, line_no); }
 
  /* ── Multi-character operators (before single-char!) ──────── */
 "=="  |
@@ -111,21 +99,20 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "<<"  |
 ">>"  |
 "->"  |
-"::"  { print_row("Operator",  yytext, line_no); cnt_op++;     }
+"::"  { print_row("Operator",  yytext, line_no); }
 
  /* ── Single-character operators ───────────────────────────── */
-[+\-*/=<>!%&|^~]  { print_row("Operator",  yytext, line_no); cnt_op++;     }
+[+\-*/=<>!%&|^~]  { print_row("Operator",  yytext, line_no); }
 
  /* ── Punctuation / Symbols ────────────────────────────────── */
-[;,(){}[\].:?]    { print_row("Symbol",    yytext, line_no); cnt_symbol++; }
+[;,(){}[\].:?]    { print_row("Symbol",    yytext, line_no); }
 
- /* ── Comments (tracked but not printed as tokens) ─────────── */
+ /* ── Comments (not printed as tokens) ─────────────────────── */
 {SL_COMMENT}  {
-    /* single-line comment — count but do not emit a token row */
-    cnt_comment++;
+    /* single-line comment — ignore */
 }
 {ML_COMMENT}  {
-    /* multi-line comment — update line counter & count */
+    /* multi-line comment — update line counter */
     int i;
     for (i = 0; yytext[i] != '\0'; i++) {
         if (yytext[i] == '\n') {
@@ -136,7 +123,6 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
             }
         }
     }
-    cnt_comment++;
 }
 
  /* ── Whitespace ───────────────────────────────────────────── */
@@ -150,7 +136,7 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 [ \t\r]+    { /* ignore */ }
 
  /* ── Anything else is an error token ─────────────────────── */
-.           { print_row("Error",      yytext, line_no); cnt_error++;   }
+.           { print_row("Error",      yytext, line_no); }
 
 %%
 
@@ -187,7 +173,6 @@ void print_row(const char *type, const char *value, int ln) {
     }
     printf("%s(%s)", type, value);
     first_token = 0;
-    token_no++;
 }
 
 void print_footer(void) {
