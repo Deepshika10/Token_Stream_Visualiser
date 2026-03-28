@@ -9,23 +9,23 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* ── state ────────────────────────────────────────────────── */
-int line_no     = 1;
 
-/* ── forward declarations ─────────────────────────────────── */
+int line_no     = 1;
+int has_error   = 0;
+
+
 void print_banner(const char *filename);
 void print_header(void);
 void print_row(const char *type, const char *value, int ln);
 void print_footer(void);
 void print_summary(void);
-char *truncate_val(const char *s, char *buf, int maxlen);
 extern int first_token;
 
 %}
 
 %option noyywrap
 
-/* ── helper definitions ───────────────────────────────────── */
+
 DIGIT       [0-9]
 LETTER      [a-zA-Z_]
 ALNUM       [a-zA-Z0-9_]
@@ -39,7 +39,7 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 
 %%
 
- /* ── Keywords (must precede IDENTIFIER rule) ─────────────── */
+
 "auto"      |
 "break"     |
 "case"      |
@@ -73,16 +73,16 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "volatile"  |
 "while"     { print_row("Keyword",    yytext, line_no); }
 
- /* ── Literals ─────────────────────────────────────────────── */
+
 {FLOAT_LIT}  { print_row("Number",     yytext, line_no); }
 {INT_LIT}    { print_row("Number",     yytext, line_no); }
 {STR_LIT}    { print_row("String",     yytext, line_no); }
 {CHAR_LIT}   { print_row("Char",       yytext, line_no); }
 
- /* ── Identifiers ──────────────────────────────────────────── */
+
 {ID}         { print_row("Identifier", yytext, line_no); }
 
- /* ── Multi-character operators (before single-char!) ──────── */
+
 "=="  |
 "!="  |
 "<="  |
@@ -101,15 +101,15 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 "->"  |
 "::"  { print_row("Operator",  yytext, line_no); }
 
- /* ── Single-character operators ───────────────────────────── */
+
 [+\-*/=<>!%&|^~]  { print_row("Operator",  yytext, line_no); }
 
- /* ── Punctuation / Symbols ────────────────────────────────── */
+
 [;,(){}[\].:?]    { print_row("Symbol",    yytext, line_no); }
 
- /* ── Comments (not printed as tokens) ─────────────────────── */
+
 {SL_COMMENT}  {
-    /* single-line comment — ignore */
+    /* single-line comment */
 }
 {ML_COMMENT}  {
     /* multi-line comment — update line counter */
@@ -136,36 +136,14 @@ ML_COMMENT  "/*"([^*]|\*+[^*/])*\*+"/"
 [ \t\r]+    { /* ignore */ }
 
  /* ── Anything else is an error token ─────────────────────── */
-.           { print_row("Error",      yytext, line_no); }
+.           {
+    has_error = 1;
+    print_row("Error", yytext, line_no);
+}
 
 %%
 
-/* ============================================================
-   Helper: truncate a value string so the table stays aligned.
-   buf must be at least maxlen+4 bytes.
-   ============================================================ */
-char *truncate_val(const char *s, char *buf, int maxlen) {
-    int len = (int)strlen(s);
-    if (len <= maxlen) {
-        strncpy(buf, s, maxlen + 3);
-        buf[maxlen + 3] = '\0';
-    } else {
-        strncpy(buf, s, maxlen - 3);
-        buf[maxlen - 3] = '\0';
-        strcat(buf, "...");
-    }
-    return buf;
-}
-
 int first_token = 1;
-
-void print_banner(const char *filename) {
-    /* empty */
-}
-
-void print_header(void) {
-    /* empty */
-}
 
 void print_row(const char *type, const char *value, int ln) {
     if (!first_token) {
@@ -177,10 +155,6 @@ void print_row(const char *type, const char *value, int ln) {
 
 void print_footer(void) {
     printf("\n");
-}
-
-void print_summary(void) {
-    /* empty */
 }
 
 /* ============================================================
@@ -203,11 +177,11 @@ int main(int argc, char *argv[]) {
 
     yyin = fp;
 
-    print_banner(argv[1]);
-    print_header();
     yylex();
     print_footer();
-    print_summary();
+    if (has_error) {
+        printf("This file is errorneous, so cannot proceed wit the next phase\n");
+    }
 
     fclose(fp);
     return 0;
